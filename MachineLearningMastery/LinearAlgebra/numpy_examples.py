@@ -1,5 +1,4 @@
 import numpy
-from numpy import array
 
 a = numpy.empty([3, 3])
 print(a.shape)
@@ -18,7 +17,7 @@ print(v[0:2, 0:2])
 # reshape 1D array to 2D
 
 # define array
-data = array([11, 22, 33, 44, 55])
+data = numpy.array([11, 22, 33, 44, 55])
 print(data.shape)
 # reshape
 data = data.reshape((data.shape[0], 1))
