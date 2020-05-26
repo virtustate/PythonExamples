@@ -7,22 +7,12 @@ from matplotlib import colors
 from sklearn.cluster import KMeans
 from sklearn.metrics import davies_bouldin_score, silhouette_score, calinski_harabasz_score
 
-picture = cv2.imread('several.png')
+picture = cv2.imread('several100.png')
 picture = cv2.cvtColor(picture, cv2.COLOR_BGR2RGB)
-# plt.imshow(picture)
-# plt.show()
-# r, g, b = cv2.split(picture)
-# fig = plt.figure()
-# axis = fig.add_subplot(1, 1, 1, projection="3d")
 pixel_colors = picture.reshape((numpy.shape(picture)[0] * numpy.shape(picture)[1], 3))
 norm = colors.Normalize(vmin=-1., vmax=1.)
 norm.autoscale(pixel_colors)
 pixel_colors = norm(pixel_colors).tolist()
-# axis.scatter(r.flatten(), g.flatten(), b.flatten(), facecolors=pixel_colors, marker=".")
-# axis.set_xlabel("Red")
-# axis.set_ylabel("Green")
-# axis.set_zlabel("Blue")
-# plt.show()
 hsv_picture = cv2.cvtColor(picture, cv2.COLOR_RGB2HSV)
 h, s, v = cv2.split(hsv_picture)
 fig = plt.figure()
@@ -46,33 +36,36 @@ y = y_row * 0
 for i in range(1, n_y):
     x = numpy.append(x, x_row)
     y = numpy.append(y, y_row * float(i / (n_y - 1)))
-d5 = numpy.transpose(numpy.vstack((h_n, s_n, v_n,x,y)))
+d5 = numpy.transpose(numpy.vstack((h_n, s_n, v_n)))
 # identify clusters
-kmeans = KMeans(n_clusters=10, random_state=0, n_init=100).fit(d5)
+kmeans = KMeans(n_clusters=8).fit(d5)
 # construct image of clusters
 cluster_centers = kmeans.cluster_centers_
 cluster_centers[:, 0] = (cluster_centers[:, 0] * 180.).astype(numpy.uint8)
 cluster_centers[:, 1] = (cluster_centers[:, 1] * 256.).astype(numpy.uint8)
 cluster_centers[:, 2] = (cluster_centers[:, 2] * 256.).astype(numpy.uint8)
-h_new = kmeans.labels_.astype(numpy.uint8)
-s_new = kmeans.labels_.astype(numpy.uint8)
-v_new = kmeans.labels_.astype(numpy.uint8)
+# nasty bug when an replaced label value equals a subsequent label in replace loop
+labels = 1000 * (kmeans.labels_ + 1)
+h_new = labels.copy()
+s_new = labels.copy()
+v_new = labels.copy()
 i = 0
 swatch = list()
 stats = list()
 for center in cluster_centers:
-    h_new[h_new == i] = center[0]
-    s_new[s_new == i] = center[1]
-    v_new[v_new == i] = center[2]
-    i = i + 1
+    label = 1000 * (i + 1)
+    h_new[h_new == label] = center[0]
+    s_new[s_new == label] = center[1]
+    v_new[v_new == label] = center[2]
     s_h = (numpy.ones((5, 10)) * center[0]).astype(numpy.uint8)
     s_s = (numpy.ones((5, 10)) * center[1]).astype(numpy.uint8)
     s_v = (numpy.ones((5, 10)) * center[2]).astype(numpy.uint8)
     swatch.append(cv2.cvtColor(cv2.merge((s_h, s_s, s_v)), cv2.COLOR_HSV2RGB))
+    i = i + 1
     #stats.append([center[3] * float(n_x), center[4] * float(n_y), len(h_new[h_new == i])])
-h_new = h_new.reshape(n_y, n_x)
-s_new = s_new.reshape(n_y, n_x)
-v_new = v_new.reshape(n_y, n_x)
+h_new = h_new.reshape(n_y, n_x).astype(numpy.uint8)
+s_new = s_new.reshape(n_y, n_x).astype(numpy.uint8)
+v_new = v_new.reshape(n_y, n_x).astype(numpy.uint8)
 # for a_stat in stats:
 #     x = int(a_stat[0])
 #     y = int(a_stat[1])
@@ -86,4 +79,6 @@ plt.imshow(new)
 plt.show()
 print(f'Davies Bouldin: {davies_bouldin_score(d5, kmeans.labels_)}')
 print(f'Silhouette: {silhouette_score(d5, kmeans.labels_, metric="euclidean")}')
+
 print(f'Colinski Harabasz: {calinski_harabasz_score(d5, kmeans.labels_)}')
+# TODO: calculate the RMS color difference between original and reconstructed image
