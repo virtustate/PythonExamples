@@ -1,3 +1,5 @@
 /venv/
 /InfluxDB/config.json
 /ColorDetection/fluid-emissary-265416-b87ab938d657.json
+/Slack/config.json
+/Slack/gc_function.py
